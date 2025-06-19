@@ -12,8 +12,11 @@ def test_generate_handleliste_valid():
     assert isinstance(response, HandlelisteResponse)
     assert response.items == [
         "Pipe Item",
+        "Parker Coupling",
         "Valve Item",
+        "Parker Adapter",
         "Pump Item",
+        "Parker Connector",
         "Flange Item",
     ]
 

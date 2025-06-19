@@ -10,6 +10,13 @@ CATALOG = {
     Component.FLANGE: "Flange Item",
 }
 
+FITTINGS = {
+    (Component.PIPE, Component.VALVE): "Parker Coupling",
+    (Component.VALVE, Component.PUMP): "Parker Adapter",
+    (Component.PUMP, Component.FLANGE): "Parker Connector",
+    (Component.FLANGE, Component.PIPE): "Parker Gasket",
+}
+
 TRANSITIONS = {
     Component.PIPE: {Component.VALVE, Component.FLANGE},
     Component.VALVE: {Component.PUMP},
@@ -34,6 +41,9 @@ def generate_handleliste(system: PipingSystem) -> HandlelisteResponse:
                 raise ValueError(
                     f"Invalid transition from {previous.value} to {component.value}"
                 )
+            fitting = FITTINGS.get((previous, component))
+            if fitting:
+                items.append(fitting)
 
         items.append(CATALOG[component])
         previous = component

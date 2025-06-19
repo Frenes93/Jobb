@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <title>Jobb Piping System Frontend</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; max-width: 600px; }
+        body { font-family: Arial, sans-serif; margin: 2rem; max-width: 700px; }
         label, select, button { font-size: 1rem; }
         #components { list-style: disc; padding-left: 1.5rem; }
         #components li { margin: .25rem 0; }
         #components li span.remove { color: red; margin-left: .5rem; cursor: pointer; }
         pre { background: #f4f4f4; padding: 1rem; }
+        #diagram { border: 1px solid #ccc; height: 200px; margin-top: 1rem; display: flex; align-items: center; overflow-x: auto; }
+        .node { border: 1px solid #333; background: #e3e3e3; padding: .5rem 1rem; margin-right: 1rem; position: relative; flex-shrink: 0; }
+        .node::after { content: ''; position: absolute; top: 50%; right: -1rem; width: 1rem; height: 2px; background: #333; }
+        .node:last-child::after { display: none; }
     </style>
 </head>
 <body>
@@ -29,12 +33,17 @@
     <h3>System Components (click x to remove)</h3>
     <ul id="components"></ul>
 </div>
+<div>
+    <h3>P&ID Diagram</h3>
+    <div id="diagram"></div>
+</div>
 <button id="generate">Generate Handleliste</button>
 <pre id="output"></pre>
 <script>
 const components = [];
 const compList = document.getElementById('components');
 const compSelect = document.getElementById('component');
+const diagram = document.getElementById('diagram');
 
 function renderList() {
     compList.innerHTML = '';
@@ -50,6 +59,17 @@ function renderList() {
         });
         li.appendChild(remove);
         compList.appendChild(li);
+    });
+    renderDiagram();
+}
+
+function renderDiagram() {
+    diagram.innerHTML = '';
+    components.forEach(c => {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.textContent = c;
+        diagram.appendChild(node);
     });
 }
 

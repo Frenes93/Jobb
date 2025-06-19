@@ -23,7 +23,15 @@ def test_api_root_endpoint():
 def test_handleliste_endpoint_valid():
     system = PipingSystem(components=["pipe", "valve", "pump", "flange"])
     response = asyncio.run(handleliste(system))
-    assert response.items == ["Pipe Item", "Valve Item", "Pump Item", "Flange Item"]
+    assert response.items == [
+        "Pipe Item",
+        "Parker Coupling",
+        "Valve Item",
+        "Parker Adapter",
+        "Pump Item",
+        "Parker Connector",
+        "Flange Item",
+    ]
 
 
 def test_handleliste_endpoint_invalid_component():

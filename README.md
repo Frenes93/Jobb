@@ -14,10 +14,11 @@ This repository contains a minimal FastAPI application. The project is intended 
    uvicorn app.main:app --reload
    ```
    The service will be available at `http://127.0.0.1:8000`.
-   Visiting the root URL now displays a small HTML interface for building
-   piping systems. The previous API welcome message has moved to
-   `http://127.0.0.1:8000/api`. The interactive API docs are still available at
-   `http://127.0.0.1:8000/docs`.
+   Visiting the root URL now launches a small web UI for creating a P&ID
+   drawing in the browser. The application automatically determines the Parker
+   fittings required between components and outputs a complete handleliste.
+   The previous API welcome message has moved to `http://127.0.0.1:8000/api`.
+   The interactive API docs are still available at `http://127.0.0.1:8000/docs`.
 
 ## Configuration
 
