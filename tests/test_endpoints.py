@@ -1,35 +1,68 @@
 import os, sys; sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from fastapi.testclient import TestClient
-from app.main import app
+import asyncio
+import pytest
+from pydantic import ValidationError
+
+from app.main import frontend, read_root
+from app.routers.pid import handleliste
+from app.schemas.pid import PipingSystem
+from fastapi.responses import FileResponse
+from fastapi import HTTPException
 
 
-client = TestClient(app)
+def test_frontend_served():
+    response = asyncio.run(frontend())
+    assert isinstance(response, FileResponse)
 
 
-def test_root_endpoint():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to the Jobb FastAPI Example"}
+def test_api_root_endpoint():
+    response = asyncio.run(read_root())
+    assert response == {"message": "Welcome to the Jobb FastAPI Example"}
 
 
 def test_handleliste_endpoint_valid():
-    payload = {"components": ["pipe", "valve", "pump", "flange"]}
-    response = client.post("/pid/handleliste", json=payload)
-    assert response.status_code == 200
-    assert response.json() == {
-        "items": ["Pipe Item", "Valve Item", "Pump Item", "Flange Item"]
-    }
+    system = PipingSystem(
+        components=["pipe", "valve", "pump", "flange"],
+        lines=[
+            {"start": 0, "end": 1, "size": "1\""},
+            {"start": 1, "end": 2, "size": "1\""},
+            {"start": 2, "end": 3, "size": "1\""},
+        ],
+    )
+    response = asyncio.run(handleliste(system))
+    assert response.items == [
+        "Pipe Item",
+        "Parker Coupling",
+        "Valve Item",
+        "Parker Adapter",
+        "Pump Item",
+        "Parker Connector",
+        "Flange Item",
+    ]
 
 
 def test_handleliste_endpoint_invalid_component():
-    payload = {"components": ["pipe", "unknown"]}
-    response = client.post("/pid/handleliste", json=payload)
-    # Pydantic validation fails before hitting the endpoint, resulting in a
-    # 422 response from FastAPI.
-    assert response.status_code == 422
+    with pytest.raises(ValidationError):
+        PipingSystem(components=["pipe", "unknown"], lines=[])
 
 
 def test_handleliste_endpoint_invalid_transition():
-    payload = {"components": ["pump", "pipe"]}
-    response = client.post("/pid/handleliste", json=payload)
-    assert response.status_code == 400
+    system = PipingSystem(
+        components=["pump", "pipe"],
+        lines=[{"start": 0, "end": 1, "size": "1\""}],
+    )
+    with pytest.raises(HTTPException):
+        asyncio.run(handleliste(system))
+
+
+def test_handleliste_endpoint_with_line_features():
+    system = PipingSystem(
+        components=["pipe", "valve", "pump"],
+        lines=[
+            {"start": 0, "end": 1, "size": "1\"", "tee": True},
+            {"start": 1, "end": 2, "size": "3/8\""},
+        ],
+    )
+    response = asyncio.run(handleliste(system))
+    assert "Parker Tee" in response.items
+    assert "Parker Adapter" in response.items
