@@ -157,16 +157,19 @@ function buildPayload() {
 }
 
 document.getElementById('export').addEventListener('click', async () => {
+
     const output = document.getElementById('output');
     output.textContent = 'Loading...';
     try {
         const response = await fetch('/pid/handleliste', {
+
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify(buildPayload())
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Error');
+
         output.textContent = data.items.join('\n');
     } catch (err) {
         output.textContent = err.message;

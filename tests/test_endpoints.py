@@ -41,6 +41,7 @@ def test_handleliste_endpoint_valid():
     ]
 
 
+
 def test_handleliste_endpoint_invalid_component():
     with pytest.raises(ValidationError):
         PipingSystem(components=["pipe", "unknown"], lines=[])
@@ -66,3 +67,4 @@ def test_handleliste_endpoint_with_line_features():
     response = asyncio.run(handleliste(system))
     assert "Parker Tee" in response.items
     assert "Parker Adapter" in response.items
+
