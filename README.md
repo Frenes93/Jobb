@@ -8,10 +8,7 @@ This repository contains a minimal FastAPI application. The project is intended 
    ```bash
    pip install -r requirements.txt
    ```
-   The file now includes packages for working with databases
-   (`SQLAlchemy`, `psycopg2-binary`), generating CSV/Excel files
-   (`pandas`, `openpyxl`), creating PDF reports (`reportlab`), and
-   interfacing with offline models via `ollama`.
+   This project only requires `fastapi`, `uvicorn`, `pydantic`, and `httpx`.
 2. Run the application using uvicorn:
    ```bash
    uvicorn app.main:app --reload
@@ -20,7 +17,7 @@ This repository contains a minimal FastAPI application. The project is intended 
 
 ## Configuration
 
-The project currently requires no environment variables, but a `.env` file can be placed in the repository root if you need to define settings for future features. Environment variables in this file will be loaded automatically if you integrate a tool such as `python-dotenv`.
+The project currently requires no environment variables, but you can add a `.env` file to configure future features as needed.
 
 
 ## Testing
