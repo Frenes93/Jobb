@@ -29,6 +29,7 @@
         <option value="6mm">6 mm</option>
     </select>
     <button id="export">Generate Handleliste</button>
+    <button id="reset">Reset</button>
 </div>
 <div id="canvas">
     <svg id="lines"></svg>
@@ -157,6 +158,15 @@ function buildPayload() {
 }
 
 document.getElementById('export').addEventListener('click', async () => {
+
+document.getElementById('reset').addEventListener('click', () => {
+    components.length = 0;
+    lines.length = 0;
+    idCounter = 0;
+    document.querySelectorAll('#canvas .node').forEach(n => n.remove());
+    document.getElementById('lines').innerHTML = '';
+    document.getElementById('output').textContent = '';
+});
 
     const output = document.getElementById('output');
     output.textContent = 'Loading...';
