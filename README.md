@@ -4,10 +4,14 @@ This repository contains a minimal FastAPI application. The project is intended 
 
 ## Installation
 
-1. Install the dependencies:
+1. Install the dependencies listed in `requirements.txt`:
    ```bash
    pip install -r requirements.txt
    ```
+   The file now includes packages for working with databases
+   (`SQLAlchemy`, `psycopg2-binary`), generating CSV/Excel files
+   (`pandas`, `openpyxl`), creating PDF reports (`reportlab`), and
+   interfacing with offline models via `ollama`.
 2. Run the application using uvicorn:
    ```bash
    uvicorn app.main:app --reload

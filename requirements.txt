@@ -1,3 +1,20 @@
 fastapi
 uvicorn
 pydantic
+# Database libraries
+SQLAlchemy
+psycopg2-binary
+
+# CSV/Excel handling
+pandas
+openpyxl
+
+# PDF generation
+reportlab
+
+# File uploads and environment loading
+python-multipart
+python-dotenv
+
+# Offline LLM integration
+ollama
