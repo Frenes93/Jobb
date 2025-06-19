@@ -17,6 +17,10 @@ This repository contains a minimal FastAPI application. The project is intended 
    uvicorn app.main:app --reload
    ```
    The service will be available at `http://127.0.0.1:8000`.
+3. Alternatively start the app directly:
+   ```bash
+   python app/main.py
+   ```
 
 ## Configuration
 

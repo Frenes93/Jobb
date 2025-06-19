@@ -1,5 +1,10 @@
 from fastapi import APIRouter
-from app.schemas.pid import PipingSystem, HandlelisteResponse
-from app.services.generator import generate_handleliste
 
-router = APIRouter(
+
+router = APIRouter()
+
+
+@router.get("/ping")
+async def ping() -> dict[str, str]:
+    """Simple health check endpoint."""
+    return {"status": "ok"}
