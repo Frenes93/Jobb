@@ -14,10 +14,15 @@ This repository contains a minimal FastAPI application. The project is intended 
    uvicorn app.main:app --reload
    ```
    The service will be available at `http://127.0.0.1:8000`.
-   Visiting the root URL now displays a small HTML interface for building
-   piping systems. The previous API welcome message has moved to
-   `http://127.0.0.1:8000/api`. The interactive API docs are still available at
-   `http://127.0.0.1:8000/docs`.
+There is also a **Reset** button to clear the diagram and start over.
+
+Visiting the root URL now launches a Smart P&ID designer where you can drag
+valves, pumps, filters and analysers onto a canvas and draw lines between
+them. The application automatically inserts Parker tees when lines intersect,
+adds bulkheads when a line enters or exits the dashed frame, and suggests
+adapters if line sizes differ. The previous API welcome message has moved to
+`http://127.0.0.1:8000/api`. The interactive API docs are still available at
+`http://127.0.0.1:8000/docs`.
 
 ## Configuration
 
