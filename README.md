@@ -14,6 +14,8 @@ This repository contains a minimal FastAPI application. The project is intended 
    uvicorn app.main:app --reload
    ```
    The service will be available at `http://127.0.0.1:8000`.
+   Visiting the root URL returns a simple welcome message, and the interactive
+   API docs are available at `http://127.0.0.1:8000/docs`.
 
 ## Configuration
 
