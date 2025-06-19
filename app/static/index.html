@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jobb Piping System Frontend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; max-width: 600px; }
+        label, select, button { font-size: 1rem; }
+        #components { list-style: disc; padding-left: 1.5rem; }
+        #components li { margin: .25rem 0; }
+        #components li span.remove { color: red; margin-left: .5rem; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 1rem; }
+    </style>
+</head>
+<body>
+<h1>Piping System Handleliste</h1>
+<div>
+    <label for="component">Component:</label>
+    <select id="component">
+        <option value="pipe">Pipe</option>
+        <option value="valve">Valve</option>
+        <option value="pump">Pump</option>
+        <option value="flange">Flange</option>
+    </select>
+    <button id="add">Add</button>
+    <button id="clear">Reset List</button>
+</div>
+<div>
+    <h3>System Components (click x to remove)</h3>
+    <ul id="components"></ul>
+</div>
+<button id="generate">Generate Handleliste</button>
+<pre id="output"></pre>
+<script>
+const components = [];
+const compList = document.getElementById('components');
+const compSelect = document.getElementById('component');
+
+function renderList() {
+    compList.innerHTML = '';
+    components.forEach((c, idx) => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        const remove = document.createElement('span');
+        remove.textContent = ' ×';
+        remove.className = 'remove';
+        remove.addEventListener('click', () => {
+            components.splice(idx, 1);
+            renderList();
+        });
+        li.appendChild(remove);
+        compList.appendChild(li);
+    });
+}
+
+document.getElementById('add').addEventListener('click', () => {
+    components.push(compSelect.value);
+    renderList();
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+    components.length = 0;
+    renderList();
+    document.getElementById('output').textContent = '';
+});
+
+document.getElementById('generate').addEventListener('click', async () => {
+    const output = document.getElementById('output');
+    output.textContent = 'Loading...';
+    try {
+        const response = await fetch('/pid/handleliste', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ components })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Error generating handleliste');
+        }
+        output.textContent = data.items.join('\n');
+    } catch (err) {
+        output.textContent = err.message;
+    }
+});
+</script>
+</body>
+</html>
