@@ -1,6 +1,6 @@
-# Jobb FastAPI Example
+# Jobb 
 
-This repository contains a minimal FastAPI application. The project is intended as a starting point for building APIs and experimenting with FastAPI features.
+This repository is for creating a tool to allow process engineers and project engineers work easier.
 
 ## Installation
 
