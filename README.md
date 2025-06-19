@@ -22,3 +22,13 @@ This repository contains a minimal FastAPI application. The project is intended 
 
 The project currently requires no environment variables, but a `.env` file can be placed in the repository root if you need to define settings for future features. Environment variables in this file will be loaded automatically if you integrate a tool such as `python-dotenv`.
 
+
+## Testing
+
+After installing the project dependencies, run the test suite with `pytest`:
+
+```bash
+pytest
+```
+
+This will execute the tests under the `tests/` directory and report any failures.
