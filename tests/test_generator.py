@@ -1,5 +1,6 @@
 import os, sys; sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
+from pydantic import ValidationError
 
 from app.schemas.pid import PipingSystem, HandlelisteResponse
 from app.services.generator import generate_handleliste
@@ -18,9 +19,8 @@ def test_generate_handleliste_valid():
 
 
 def test_generate_handleliste_invalid_component():
-    system = PipingSystem(components=["pipe", "unknown"])
-    with pytest.raises(ValueError):
-        generate_handleliste(system)
+    with pytest.raises(ValidationError):
+        generate_handleliste(PipingSystem(components=["pipe", "unknown"]))
 
 
 def test_generate_handleliste_invalid_transition():
