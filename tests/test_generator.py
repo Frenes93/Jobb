@@ -33,13 +33,16 @@ def test_generate_handleliste_invalid_component():
         generate_handleliste(PipingSystem(components=["pipe", "unknown"], lines=[]))
 
 
-def test_generate_handleliste_invalid_transition():
+def test_generate_handleliste_no_error_on_unlisted_transition():
     system = PipingSystem(
-        components=["pump", "pipe"],
+        components=["pump", "filter"],
         lines=[{"start": 0, "end": 1, "size": "1\""}],
     )
-    with pytest.raises(ValueError):
-        generate_handleliste(system)
+    response = generate_handleliste(system)
+    # The pump and filter items should still appear even though the transition
+    # was not explicitly listed in the fitting table.
+    assert response.items[0] == "Pump Item"
+    assert response.items[-1] == "Filter Item"
 
 
 def test_generate_handleliste_with_line_features():
@@ -53,3 +56,12 @@ def test_generate_handleliste_with_line_features():
     response = generate_handleliste(system)
     assert "Parker Bulkhead" in response.items
     assert "Parker Adapter" in response.items
+
+
+def test_generate_handleliste_other_brand():
+    system = PipingSystem(
+        components=["pipe", "valve"],
+        lines=[{"start": 0, "end": 1, "size": "1\""}],
+    )
+    response = generate_handleliste(system, brand="butech")
+    assert response.items[1] == "Butech Coupling"
