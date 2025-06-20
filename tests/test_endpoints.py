@@ -41,13 +41,14 @@ def test_handleliste_endpoint_valid():
     ]
 
 
-
 def test_handleliste_endpoint_allows_any_transition():
+    system = PipingSystem(
         components=["pump", "filter"],
+        lines=[{"start": 0, "end": 1, "size": "1\""}],
+    )
     response = asyncio.run(handleliste(system))
     assert response.items[0] == "Pump Item"
     assert response.items[-1] == "Filter Item"
-
 
 
 def test_handleliste_endpoint_brand_param():
@@ -57,13 +58,15 @@ def test_handleliste_endpoint_brand_param():
     )
     response = asyncio.run(handleliste(system, brand="swagelok"))
     assert response.items[1] == "Swagelok Coupling"
+
+
 def test_handleliste_endpoint_invalid_transition():
     system = PipingSystem(
         components=["pump", "pipe"],
         lines=[{"start": 0, "end": 1, "size": "1\""}],
     )
-    with pytest.raises(HTTPException):
-        asyncio.run(handleliste(system))
+    response = asyncio.run(handleliste(system))
+    assert response.items[0] == "Pump Item"
 
 
 def test_handleliste_endpoint_with_line_features():
@@ -77,4 +80,3 @@ def test_handleliste_endpoint_with_line_features():
     response = asyncio.run(handleliste(system))
     assert "Parker Tee" in response.items
     assert "Parker Adapter" in response.items
-

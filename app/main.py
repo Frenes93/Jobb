@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import pid
+from app.routers import pid, pdf
 
 app = FastAPI()
 
@@ -25,3 +25,4 @@ async def read_root() -> dict[str, str]:
 
 
 app.include_router(pid.router)
+app.include_router(pdf.router)
