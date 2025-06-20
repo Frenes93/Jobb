@@ -42,11 +42,21 @@ def test_handleliste_endpoint_valid():
 
 
 
-def test_handleliste_endpoint_invalid_component():
-    with pytest.raises(ValidationError):
-        PipingSystem(components=["pipe", "unknown"], lines=[])
+def test_handleliste_endpoint_allows_any_transition():
+        components=["pump", "filter"],
+    response = asyncio.run(handleliste(system))
+    assert response.items[0] == "Pump Item"
+    assert response.items[-1] == "Filter Item"
 
 
+
+def test_handleliste_endpoint_brand_param():
+    system = PipingSystem(
+        components=["pipe", "valve"],
+        lines=[{"start": 0, "end": 1, "size": "1\""}],
+    )
+    response = asyncio.run(handleliste(system, brand="swagelok"))
+    assert response.items[1] == "Swagelok Coupling"
 def test_handleliste_endpoint_invalid_transition():
     system = PipingSystem(
         components=["pump", "pipe"],

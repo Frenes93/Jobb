@@ -12,28 +12,35 @@ CATALOG = {
     Component.ANALYZER: "Analyzer Item",
 }
 
-FITTINGS = {
-    (Component.PIPE, Component.VALVE): "Parker Coupling",
-    (Component.VALVE, Component.PUMP): "Parker Adapter",
-    (Component.PUMP, Component.FLANGE): "Parker Connector",
-    (Component.FLANGE, Component.PIPE): "Parker Gasket",
-    (Component.PIPE, Component.FILTER): "Parker Coupling",
-    (Component.FILTER, Component.ANALYZER): "Parker Connector",
-    (Component.ANALYZER, Component.FLANGE): "Parker Adapter",
+FITTINGS_BASE = {
+    (Component.PIPE, Component.VALVE): "Coupling",
+    (Component.VALVE, Component.PUMP): "Adapter",
+    (Component.PUMP, Component.FLANGE): "Connector",
+    (Component.FLANGE, Component.PIPE): "Gasket",
+    (Component.PIPE, Component.FILTER): "Coupling",
+    (Component.FILTER, Component.ANALYZER): "Connector",
+    (Component.ANALYZER, Component.FLANGE): "Adapter",
 }
 
-TRANSITIONS = {
-    Component.PIPE: {Component.VALVE, Component.FLANGE, Component.FILTER},
-    Component.VALVE: {Component.PUMP, Component.FILTER},
-    Component.PUMP: {Component.FLANGE},
-    Component.FLANGE: {Component.PIPE},
-    Component.FILTER: {Component.ANALYZER},
-    Component.ANALYZER: {Component.FLANGE},
-}
+BRANDS = {"parker", "butech", "swagelok"}
+
+# Allow any component transitions; fittings will be looked up when available
 
 
-def generate_handleliste(system: PipingSystem) -> HandlelisteResponse:
-    """Generate a handleliste for the given piping system."""
+def generate_handleliste(system: PipingSystem, brand: str = "parker") -> HandlelisteResponse:
+    """Generate a handleliste for the given piping system.
+
+    Parameters
+    ----------
+    system:
+        The piping system description.
+    brand:
+        Brand name for fittings (``"parker"``, ``"butech"`` or ``"swagelok"``).
+    """
+
+    brand_lc = brand.lower()
+    if brand_lc not in BRANDS:
+        raise ValueError(f"Unknown brand: {brand}")
 
     items: list[str] = []
 
@@ -56,26 +63,19 @@ def generate_handleliste(system: PipingSystem) -> HandlelisteResponse:
             items.append(CATALOG[start_comp])
             seen.add(line.start)
 
-        # check transition validity
-        allowed = TRANSITIONS.get(start_comp, set())
-        if end_comp not in allowed:
-            raise ValueError(
-                f"Invalid transition from {start_comp.value} to {end_comp.value}"
-            )
-
         # adapter if component already connected with different size
         prev_size = connection_sizes.get(line.start)
         if prev_size is not None and prev_size != line.size:
-            items.append("Parker Adapter")
+            items.append(f"{brand_lc.capitalize()} Adapter")
 
-        fitting = FITTINGS.get((start_comp, end_comp))
-        if fitting:
-            items.append(fitting)
+        fitting_base = FITTINGS_BASE.get((start_comp, end_comp))
+        if fitting_base:
+            items.append(f"{brand_lc.capitalize()} {fitting_base}")
 
         if line.bulkhead:
-            items.append("Parker Bulkhead")
+            items.append(f"{brand_lc.capitalize()} Bulkhead")
         if line.tee:
-            items.append("Parker Tee")
+            items.append(f"{brand_lc.capitalize()} Tee")
 
         connection_sizes[line.start] = line.size
         connection_sizes[line.end] = line.size
