@@ -13,17 +13,7 @@ This repository is for creating a tool to allow process engineers and project en
    ```bash
    uvicorn app.main:app --reload
    ```
-   The service will be available at `http://127.0.0.1:8000`.
-pipes, valves, pumps, filters and analysers onto a canvas and draw lines between
-them. The application automatically inserts tees when lines intersect, adds
-bulkheads when a line enters or exits the dashed frame, and suggests adapters if
-line sizes differ. A drop-down lets you pick the fitting brand (Parker, Butech
-or Swagelok) used in the handleliste. The previous API welcome message has
-moved to `http://127.0.0.1:8000/api`. The interactive API docs are still
-available at `http://127.0.0.1:8000/docs`. There is also a **Reset** button to
-clear the diagram and start over.
-`http://127.0.0.1:8000/api`. The interactive API docs are still available at
-`http://127.0.0.1:8000/docs`.
+The service will be available at `http://127.0.0.1:8000`.
 
 ## Configuration
 
@@ -39,3 +29,18 @@ pytest
 ```
 
 This will execute the tests under the `tests/` directory and report any failures.
+
+## Desktop Tubing Designer
+
+A simple example desktop application using Dear PyGui is available in
+`app/tubing_gui.py`. Run it with:
+
+```bash
+python app/tubing_gui.py
+```
+
+The GUI lets you choose both a system type and the fitting brand (Parker,
+Butech or Swagelok). You can draw tubing lines and place valves or analyzers on
+a canvas. When a new line branches off an existing one, the application
+automatically inserts a tee fitting. Projects can be saved to or loaded from
+JSON files.
