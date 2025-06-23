@@ -50,4 +50,6 @@ python app/tubing_gui.py
 ```
 
 The GUI lets you choose a system type, draw tubing lines and place valves or
-analyzers on a canvas. Projects can be saved to or loaded from JSON files.
+analyzers on a canvas. When a new line branches off an existing one, the
+application automatically inserts a tee fitting. Projects can be saved to or
+loaded from JSON files.

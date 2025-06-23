@@ -7,6 +7,7 @@ from enum import Enum
 from typing import List, Tuple
 import json
 from pathlib import Path
+import math
 
 from dearpygui import dearpygui as dpg
 
@@ -37,6 +38,29 @@ class Tee:
 class Analyzer:
     position: Tuple[float, float]
     hose_type: str = "flex"
+
+
+def point_on_segment(point: Tuple[float, float], start: Tuple[float, float], end: Tuple[float, float], eps: float = 1.0) -> bool:
+    """Return True if point lies on the line segment defined by start-end."""
+    x, y = point
+    x1, y1 = start
+    x2, y2 = end
+    # bounding box check
+    if not (min(x1, x2) - eps <= x <= max(x1, x2) + eps and min(y1, y2) - eps <= y <= max(y1, y2) + eps):
+        return False
+    # cross product should be near zero for colinear points
+    cross = abs((x - x1) * (y2 - y1) - (y - y1) * (x2 - x1))
+    if cross > eps:
+        return False
+    return True
+
+
+def add_tee(position: Tuple[float, float]) -> None:
+    """Append a tee if one does not already exist at the given position."""
+    for tee in PROJECT.tees:
+        if math.dist(tee.position, position) <= 1.0:
+            return
+    PROJECT.tees.append(Tee(position=position))
 
 
 @dataclass
@@ -113,12 +137,18 @@ def finish_line(sender, app_data):
         return
     pos = dpg.get_mouse_pos(local=False)
     line = Tubing(start=(CURRENT_LINE[0], CURRENT_LINE[1]), end=(pos[0], pos[1]))
-    # check for tee at start or end
+
+    # Check for branching at start and end
     for t in PROJECT.tubings:
-        if t.end == line.start or t.start == line.end or t.start == line.start or t.end == line.end:
-            line.tee = True
-            PROJECT.tees.append(Tee(position=line.start))
-            break
+        if point_on_segment(line.start, t.start, t.end):
+            add_tee(line.start)
+        if point_on_segment(line.end, t.start, t.end):
+            add_tee(line.end)
+        if point_on_segment(t.start, line.start, line.end):
+            add_tee(t.start)
+        if point_on_segment(t.end, line.start, line.end):
+            add_tee(t.end)
+
     PROJECT.tubings.append(line)
     CURRENT_LINE = []
     redraw_canvas()
@@ -142,6 +172,8 @@ def redraw_canvas():
         dpg.draw_line(line.start, line.end, color=(200, 0, 0), thickness=2, parent="drawlist")
         if line.tee:
             dpg.draw_circle(line.start, 5, color=(0, 0, 200), fill=(0, 0, 200), parent="drawlist")
+    for tee in PROJECT.tees:
+        dpg.draw_circle(tee.position, 5, color=(0, 0, 200), fill=(0, 0, 200), parent="drawlist")
     for valve in PROJECT.valves:
         dpg.draw_rectangle((valve.position[0]-5, valve.position[1]-5), (valve.position[0]+5, valve.position[1]+5),
                            color=(0, 200, 0), fill=(0, 200, 0), parent="drawlist")
