@@ -39,3 +39,15 @@ pytest
 ```
 
 This will execute the tests under the `tests/` directory and report any failures.
+
+## Desktop Tubing Designer
+
+A simple example desktop application using Dear PyGui is available in
+`app/tubing_gui.py`. Run it with:
+
+```bash
+python app/tubing_gui.py
+```
+
+The GUI lets you choose a system type, draw tubing lines and place valves or
+analyzers on a canvas. Projects can be saved to or loaded from JSON files.
