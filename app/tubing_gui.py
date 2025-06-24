@@ -44,7 +44,6 @@ def highlight_selection(pos: Tuple[float, float]) -> None:
     )
 
 
-
 def register_interactable(tag: int, obj: object) -> None:
     """Register a draw item for interaction."""
     interactable_items[tag] = obj
@@ -64,7 +63,6 @@ def on_mouse_click(sender, app_data):
     # If nothing selected, begin drawing a line and clear highlight
     selected_item = None
     clear_highlight()
-
     start_line(sender, app_data)
 
 
@@ -117,8 +115,71 @@ def delete_selected_item() -> None:
     dpg.delete_item(tag)
     interactable_items.pop(tag, None)
     clear_highlight()
-
     selected_item = None
+
+
+selection_rect_tag = "selection_box"
+selection_start_pos: Tuple[float, float] | None = None
+rectangle_active = False
+
+
+def on_right_click_down(sender, app_data) -> None:
+    """Begin rectangle selection for bulk delete."""
+    global selection_start_pos, rectangle_active
+    selection_start_pos = dpg.get_mouse_pos(local=False)
+    rectangle_active = True
+    if dpg.does_item_exist(selection_rect_tag):
+        dpg.delete_item(selection_rect_tag)
+
+
+def on_right_drag(sender, app_data) -> None:
+    """Update the selection rectangle while dragging."""
+    if not rectangle_active or selection_start_pos is None:
+        return
+    mouse_pos = dpg.get_mouse_pos(local=False)
+    if dpg.does_item_exist(selection_rect_tag):
+        dpg.delete_item(selection_rect_tag)
+    dpg.draw_rectangle(
+        pmin=selection_start_pos,
+        pmax=mouse_pos,
+        color=(255, 255, 0),
+        thickness=1,
+        parent="drawlist",
+        tag=selection_rect_tag,
+    )
+
+
+def on_right_release(sender, app_data) -> None:
+    """Delete all components inside the selection rectangle."""
+    global rectangle_active, selection_start_pos
+    if not rectangle_active or selection_start_pos is None:
+        return
+    rectangle_active = False
+    end_pos = dpg.get_mouse_pos(local=False)
+    x1, y1 = selection_start_pos
+    x2, y2 = end_pos
+    xmin, xmax = sorted([x1, x2])
+    ymin, ymax = sorted([y1, y2])
+
+    to_delete: list[int] = []
+    for tag, obj in list(interactable_items.items()):
+        pos = getattr(obj, "position", (0.0, 0.0))
+        if xmin <= pos[0] <= xmax and ymin <= pos[1] <= ymax:
+            to_delete.append(tag)
+
+    for tag in to_delete:
+        obj = interactable_items.pop(tag)
+        if isinstance(obj, Valve) and obj in PROJECT.valves:
+            PROJECT.valves.remove(obj)
+        elif isinstance(obj, Tee) and obj in PROJECT.tees:
+            PROJECT.tees.remove(obj)
+        elif isinstance(obj, Analyzer) and obj in PROJECT.analyzers:
+            PROJECT.analyzers.remove(obj)
+        dpg.delete_item(tag)
+
+    if dpg.does_item_exist(selection_rect_tag):
+        dpg.delete_item(selection_rect_tag)
+
 
 
 class SystemType(Enum):
@@ -375,6 +436,10 @@ def main():
         dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Left, callback=on_mouse_click)
         dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Left, callback=on_mouse_drag)
         dpg.add_mouse_release_handler(button=dpg.mvMouseButton_Left, callback=on_mouse_release)
+        dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Right, callback=on_right_click_down)
+        dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Right, callback=on_right_drag)
+        dpg.add_mouse_release_handler(button=dpg.mvMouseButton_Right, callback=on_right_release)
+
 
 
     dpg.setup_dearpygui()
