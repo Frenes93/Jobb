@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Upload Portal</title>
+</head>
+<body>
+<h1>Upload PDF</h1>
+<form id="upload-form">
+    <input type="file" id="pdf" accept="application/pdf" required>
+    <button type="submit">Upload</button>
+</form>
+<pre id="output"></pre>
+<script>
+document.getElementById('upload-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const input = document.getElementById('pdf');
+    if (!input.files.length) return;
+    const file = input.files[0];
+    const resp = await fetch('/pdf/extract', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/pdf'},
+        body: file
+    });
+    const data = await resp.json();
+    document.getElementById('output').textContent = data.text || data.detail;
+});
+</script>
+</body>
+</html>

@@ -11,6 +11,12 @@ async def frontend() -> dict[str, str]:
     return {"message": "Welcome to the Jobb API"}
 
 
+@app.get("/upload")
+async def upload_portal() -> FileResponse:
+    """Serve the PDF upload portal."""
+    return FileResponse(static_dir / "upload.html")
+
+
 @app.get("/api")
 async def read_root() -> dict[str, str]:
     """Simple welcome endpoint for the API root path."""

@@ -3,15 +3,8 @@ import zlib
 from pathlib import Path
 
 
-def read_pdf_text(path: str | Path) -> str:
-    """Extract text from a PDF file.
-
-    This implementation only handles simple PDFs with optional Flate encoded
-    streams. It scans each stream section and tries to decompress it if
-    necessary, then collects text within parentheses.
-    """
-    pdf_path = Path(path)
-    data = pdf_path.read_bytes()
+def _extract_text(data: bytes) -> str:
+    """Extract text from raw PDF bytes."""
     text_parts: list[str] = []
 
     for match in re.finditer(rb"stream\r?\n(.*?)endstream", data, re.S):
@@ -28,4 +21,17 @@ def read_pdf_text(path: str | Path) -> str:
                 text_parts.append(section.decode("utf-8"))
             except UnicodeDecodeError:
                 text_parts.append(section.decode("latin1", errors="ignore"))
+
     return "".join(text_parts)
+
+
+def read_pdf_text(path: str | Path) -> str:
+    """Extract text from a PDF file given a path."""
+    pdf_path = Path(path)
+    data = pdf_path.read_bytes()
+    return _extract_text(data)
+
+
+def read_pdf_bytes(data: bytes) -> str:
+    """Extract text from an uploaded PDF file."""
+    return _extract_text(data)
