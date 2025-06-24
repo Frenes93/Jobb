@@ -28,6 +28,7 @@ ENDPOINT_MARKERS: list[int] = []
 MIDPOINT_MARKER: int | None = None
 
 
+
 # Hover feedback helpers
 HOVERED_LINE: int | None = None
 
@@ -37,6 +38,7 @@ DRAG_LINE_ORIGINAL: tuple[tuple[float, float], tuple[float, float]] | None = Non
 
 # UI label helper
 CURRENT_SELECTION: str = "None"
+
 
 
 
@@ -54,6 +56,13 @@ def toggle_snap(sender, app_data):
     SNAP_ENABLED = app_data
     print(f"Snap {'enabled' if SNAP_ENABLED else 'disabled'}")
     update_info_label()
+
+
+def toggle_snap(sender, app_data):
+    """Enable or disable endpoint snapping from UI."""
+    global SNAP_ENABLED
+    SNAP_ENABLED = app_data
+    print(f"Snap {'enabled' if SNAP_ENABLED else 'disabled'}")
 
 # ---------------------------------------------------------------------------
 # Interactivity helpers
@@ -78,7 +87,9 @@ def update_info_label() -> None:
 
 def clear_highlight() -> None:
     """Remove the selection highlight if present."""
+
     global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER, CURRENT_SELECTION
+    
     if dpg.does_item_exist("selection_marker"):
         dpg.delete_item("selection_marker")
     if dpg.does_item_exist("highlighted_line"):
@@ -91,9 +102,11 @@ def clear_highlight() -> None:
         dpg.delete_item(MIDPOINT_MARKER)
     MIDPOINT_MARKER = None
     SELECTED_LINE = None
+
     CURRENT_SELECTION = "None"
     highlight_hover_line(None)
     update_info_label()
+
 
 
 def highlight_selection(pos: Tuple[float, float]) -> None:
@@ -145,6 +158,7 @@ def move_whole_line(line_tag: int, delta: Tuple[float, float]) -> None:
 
 def highlight_line(tag: int) -> None:
     """Highlight a tubing line and show draggable markers."""
+
     global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER, CURRENT_SELECTION
     
     clear_highlight()
@@ -155,12 +169,18 @@ def highlight_line(tag: int) -> None:
     p1, p2 = cfg["p1"], cfg["p2"]
 
     dpg.draw_line(p1=p1, p2=p2, color=(255, 255, 0), thickness=3,
-                  parent="ui_layer", tag="highlighted_line")
+
+                  parent="drawlist", tag="highlighted_line")
 
     ENDPOINT_MARKERS = []
     for i, point in enumerate([p1, p2]):
-        drag_tag = dpg.draw_circle(center=point, radius=6, color=(0, 255, 255),
-                                   fill=(0, 255, 255), parent="ui_layer")
+        drag_tag = dpg.draw_circle(
+            center=point,
+            radius=6,
+            color=(0, 255, 255),
+            fill=(0, 255, 255),
+            parent="drawlist",
+        )
         dpg.set_drag_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
         ENDPOINT_MARKERS.append(drag_tag)
 
@@ -171,6 +191,7 @@ def highlight_line(tag: int) -> None:
         pmax=(midpoint[0] + 5, midpoint[1] + 5),
         color=(0, 255, 0),
         fill=(0, 255, 0),
+
         parent="ui_layer",
     )
     dpg.set_drag_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
@@ -219,16 +240,13 @@ def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) ->
 
 def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
     """Drag handler for endpoint markers."""
-    global DRAG_START_POS
     mouse_pos = dpg.get_mouse_pos(local=False)
-    if DRAG_START_POS is None:
-        cfg = dpg.get_item_configuration(line_tag)
-        DRAG_START_POS = cfg["p1"] if endpoint_idx == 0 else cfg["p2"]
 
     if SNAP_ENABLED:
         snap_target = find_nearest_snap_target(mouse_pos)
         new_pos = snap_target if snap_target else mouse_pos
     else:
+
         snap_target = None
         new_pos = mouse_pos
 
@@ -256,10 +274,12 @@ def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
 def on_drag_line(line_tag: int) -> None:
     """Drag handler for the line midpoint marker."""
     global DRAG_LINE_ORIGINAL
+
     mouse_pos = dpg.get_mouse_pos(local=False)
     cfg = dpg.get_item_configuration(line_tag)
     p1, p2 = cfg["p1"], cfg["p2"]
     midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+
     if DRAG_LINE_ORIGINAL is None:
         DRAG_LINE_ORIGINAL = (p1, p2)
     dx, dy = mouse_pos[0] - midpoint[0], mouse_pos[1] - midpoint[1]
@@ -287,6 +307,7 @@ def on_mouse_move(sender, app_data):
     highlight_hover_line(None)
 
 
+
 def on_mouse_click(sender, app_data):
     """Handle left-clicks for selection or starting lines."""
     global selected_item
@@ -306,7 +327,9 @@ def on_mouse_click(sender, app_data):
             if math.dist(mouse_pos, pos) <= 10:
                 selected_item = (tag, obj)
                 highlight_selection(pos)
+
                 highlight_hover_line(None)
+
                 return
 
     for tag, obj in interactable_items.items():
@@ -315,6 +338,7 @@ def on_mouse_click(sender, app_data):
                 selected_item = None
                 highlight_line(tag)
                 highlight_hover_line(None)
+
                 return
 
 
@@ -713,7 +737,9 @@ def redraw_canvas():
 
     if SELECTED_LINE is not None and dpg.does_item_exist(SELECTED_LINE):
         highlight_line(SELECTED_LINE)
+
     update_info_label()
+
 
 
 def main():
