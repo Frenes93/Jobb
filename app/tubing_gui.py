@@ -238,7 +238,7 @@ def main():
         dpg.add_input_text(label="Load Path", tag="load_path")
         dpg.add_button(label="Load", callback=lambda: load_project())
 
-    with dpg.window(label="Canvas", width=600, height=600, pos=(200, 0)):
+    with dpg.window(label="Canvas", tag="Canvas", width=600, height=600, pos=(200, 0)):
         with dpg.drawlist(width=580, height=580, tag="drawlist"):
             pass
 
