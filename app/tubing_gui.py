@@ -18,6 +18,13 @@ from dearpygui import dearpygui as dpg
 # ---------------------------------------------------------------------------
 
 PIPING_MODE = False
+# Snap-to-geometry flag
+SNAP_ENABLED = True
+
+# Line selection helpers
+SELECTED_LINE: int | None = None
+ENDPOINT_MARKERS: list[int] = []
+MIDPOINT_MARKER: int | None = None
 
 
 def toggle_piping_mode(sender, app_data):
@@ -25,6 +32,13 @@ def toggle_piping_mode(sender, app_data):
     global PIPING_MODE
     PIPING_MODE = app_data
     print(f"Piping mode {'enabled' if PIPING_MODE else 'disabled'}")
+
+
+def toggle_snap(sender, app_data):
+    """Enable or disable endpoint snapping from UI."""
+    global SNAP_ENABLED
+    SNAP_ENABLED = app_data
+    print(f"Snap {'enabled' if SNAP_ENABLED else 'disabled'}")
 
 # ---------------------------------------------------------------------------
 # Interactivity helpers
@@ -40,8 +54,19 @@ interactable_items: dict[int, object] = {}
 
 def clear_highlight() -> None:
     """Remove the selection highlight if present."""
+    global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER
     if dpg.does_item_exist("selection_marker"):
         dpg.delete_item("selection_marker")
+    if dpg.does_item_exist("highlighted_line"):
+        dpg.delete_item("highlighted_line")
+    for marker in ENDPOINT_MARKERS:
+        if dpg.does_item_exist(marker):
+            dpg.delete_item(marker)
+    ENDPOINT_MARKERS.clear()
+    if MIDPOINT_MARKER is not None and dpg.does_item_exist(MIDPOINT_MARKER):
+        dpg.delete_item(MIDPOINT_MARKER)
+    MIDPOINT_MARKER = None
+    SELECTED_LINE = None
 
 
 def highlight_selection(pos: Tuple[float, float]) -> None:
@@ -62,6 +87,112 @@ def register_interactable(tag: int, obj: object) -> None:
     interactable_items[tag] = obj
 
 
+def move_line_endpoint(line_tag: int, endpoint_idx: int, new_pos: Tuple[float, float]) -> None:
+    """Move one endpoint of a drawn line and update the backing object."""
+    cfg = dpg.get_item_configuration(line_tag)
+    p1, p2 = cfg["p1"], cfg["p2"]
+    new_p1 = new_pos if endpoint_idx == 0 else p1
+    new_p2 = new_pos if endpoint_idx == 1 else p2
+    dpg.configure_item(line_tag, p1=new_p1, p2=new_p2)
+    line_obj = interactable_items.get(line_tag)
+    if isinstance(line_obj, Tubing):
+        line_obj.start = new_p1
+        line_obj.end = new_p2
+
+
+def move_whole_line(line_tag: int, delta: Tuple[float, float]) -> None:
+    """Translate a line by the given delta."""
+    cfg = dpg.get_item_configuration(line_tag)
+    p1, p2 = cfg["p1"], cfg["p2"]
+    new_p1 = (p1[0] + delta[0], p1[1] + delta[1])
+    new_p2 = (p2[0] + delta[0], p2[1] + delta[1])
+    dpg.configure_item(line_tag, p1=new_p1, p2=new_p2)
+    line_obj = interactable_items.get(line_tag)
+    if isinstance(line_obj, Tubing):
+        line_obj.start = new_p1
+        line_obj.end = new_p2
+
+
+def highlight_line(tag: int) -> None:
+    """Highlight a tubing line and show draggable markers."""
+    global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER
+
+    clear_highlight()
+    SELECTED_LINE = tag
+
+    cfg = dpg.get_item_configuration(tag)
+    p1, p2 = cfg["p1"], cfg["p2"]
+
+    dpg.draw_line(p1=p1, p2=p2, color=(255, 255, 0), thickness=3,
+                  parent="drawlist", tag="highlighted_line")
+
+    ENDPOINT_MARKERS = []
+    for i, point in enumerate([p1, p2]):
+        drag_tag = dpg.draw_circle(
+            center=point,
+            radius=6,
+            color=(0, 255, 255),
+            fill=(0, 255, 255),
+            parent="drawlist",
+        )
+        dpg.set_drag_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
+        ENDPOINT_MARKERS.append(drag_tag)
+
+    midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+    MIDPOINT_MARKER = dpg.draw_rectangle(
+        pmin=(midpoint[0] - 5, midpoint[1] - 5),
+        pmax=(midpoint[0] + 5, midpoint[1] + 5),
+        color=(0, 255, 0),
+        fill=(0, 255, 0),
+        parent="drawlist",
+    )
+    dpg.set_drag_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
+
+
+def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) -> Tuple[float, float] | None:
+    """Return the position of the nearest snap target within the threshold."""
+    candidates: list[Tuple[float, float]] = []
+    for _, obj in interactable_items.items():
+        if hasattr(obj, "position"):
+            candidates.append(obj.position)
+    # Include endpoints of existing tubing lines
+    for tube in PROJECT.tubings:
+        candidates.append(tube.start)
+        candidates.append(tube.end)
+
+    nearest: Tuple[float, float] | None = None
+    best_dist = threshold
+    for c in candidates:
+        d = math.dist(pos, c)
+        if d <= best_dist:
+            nearest = c
+            best_dist = d
+    return nearest
+
+
+def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
+    """Drag handler for endpoint markers."""
+    mouse_pos = dpg.get_mouse_pos(local=False)
+    if SNAP_ENABLED:
+        snap_target = find_nearest_snap_target(mouse_pos)
+        new_pos = snap_target if snap_target else mouse_pos
+    else:
+        new_pos = mouse_pos
+    move_line_endpoint(line_tag, endpoint_idx, new_pos)
+    highlight_line(line_tag)
+
+
+def on_drag_line(line_tag: int) -> None:
+    """Drag handler for the line midpoint marker."""
+    mouse_pos = dpg.get_mouse_pos(local=False)
+    cfg = dpg.get_item_configuration(line_tag)
+    p1, p2 = cfg["p1"], cfg["p2"]
+    midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+    dx, dy = mouse_pos[0] - midpoint[0], mouse_pos[1] - midpoint[1]
+    move_whole_line(line_tag, (dx, dy))
+    highlight_line(line_tag)
+
+
 def on_mouse_click(sender, app_data):
     """Handle left-clicks for selection or starting lines."""
     global selected_item
@@ -75,11 +206,19 @@ def on_mouse_click(sender, app_data):
 
 
     for tag, obj in interactable_items.items():
-        pos = getattr(obj, "position", (0.0, 0.0))
-        if math.dist(mouse_pos, pos) <= 10:
-            selected_item = (tag, obj)
-            highlight_selection(pos)
-            return
+        if hasattr(obj, "position"):
+            pos = obj.position
+            if math.dist(mouse_pos, pos) <= 10:
+                selected_item = (tag, obj)
+                highlight_selection(pos)
+                return
+
+    for tag, obj in interactable_items.items():
+        if isinstance(obj, Tubing):
+            if point_near_segment(mouse_pos, obj.start, obj.end, threshold=6.0):
+                selected_item = None
+                highlight_line(tag)
+                return
 
 
     selected_item = None
@@ -120,7 +259,17 @@ def on_mouse_release(sender, app_data):
 
 def delete_selected_item() -> None:
     """Delete the currently selected component from the canvas and project."""
-    global selected_item
+    global selected_item, SELECTED_LINE
+    if SELECTED_LINE is not None:
+        obj = interactable_items.pop(SELECTED_LINE, None)
+        if isinstance(obj, Tubing) and obj in PROJECT.tubings:
+            PROJECT.tubings.remove(obj)
+        if dpg.does_item_exist(SELECTED_LINE):
+            dpg.delete_item(SELECTED_LINE)
+        clear_highlight()
+        SELECTED_LINE = None
+        return
+
     if not selected_item:
         return
 
@@ -171,7 +320,7 @@ def on_right_drag(sender, app_data) -> None:
 
 def on_right_release(sender, app_data) -> None:
     """Delete all components inside the selection rectangle."""
-    global rectangle_active, selection_start_pos
+    global rectangle_active, selection_start_pos, selected_item, SELECTED_LINE
     if not rectangle_active or selection_start_pos is None:
         return
     rectangle_active = False
@@ -183,8 +332,15 @@ def on_right_release(sender, app_data) -> None:
 
     to_delete: list[int] = []
     for tag, obj in list(interactable_items.items()):
-        pos = getattr(obj, "position", (0.0, 0.0))
-        if xmin <= pos[0] <= xmax and ymin <= pos[1] <= ymax:
+        inside = False
+        if hasattr(obj, "position"):
+            pos = obj.position
+            inside = xmin <= pos[0] <= xmax and ymin <= pos[1] <= ymax
+        elif isinstance(obj, Tubing):
+            s_in = xmin <= obj.start[0] <= xmax and ymin <= obj.start[1] <= ymax
+            e_in = xmin <= obj.end[0] <= xmax and ymin <= obj.end[1] <= ymax
+            inside = s_in or e_in
+        if inside:
             to_delete.append(tag)
 
     for tag in to_delete:
@@ -195,7 +351,14 @@ def on_right_release(sender, app_data) -> None:
             PROJECT.tees.remove(obj)
         elif isinstance(obj, Analyzer) and obj in PROJECT.analyzers:
             PROJECT.analyzers.remove(obj)
+        elif isinstance(obj, Tubing) and obj in PROJECT.tubings:
+            PROJECT.tubings.remove(obj)
         dpg.delete_item(tag)
+        if SELECTED_LINE == tag:
+            clear_highlight()
+            SELECTED_LINE = None
+        if selected_item and selected_item[0] == tag:
+            selected_item = None
 
     if dpg.does_item_exist(selection_rect_tag):
         dpg.delete_item(selection_rect_tag)
@@ -252,6 +415,20 @@ def point_on_segment(point: Tuple[float, float], start: Tuple[float, float], end
     if cross > eps:
         return False
     return True
+
+
+def point_near_segment(point: Tuple[float, float], start: Tuple[float, float], end: Tuple[float, float], threshold: float = 5.0) -> bool:
+    """Return True if the point is within *threshold* pixels of the segment."""
+    x, y = point
+    x1, y1 = start
+    x2, y2 = end
+    if (x1, y1) == (x2, y2):
+        return math.dist(point, start) <= threshold
+    dx, dy = x2 - x1, y2 - y1
+    t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)
+    t = max(0.0, min(1.0, t))
+    proj = (x1 + t * dx, y1 + t * dy)
+    return math.dist(point, proj) <= threshold
 
 
 def add_tee(position: Tuple[float, float]) -> None:
@@ -391,8 +568,10 @@ def add_analyzer():
 def redraw_canvas():
     dpg.delete_item("drawlist", children_only=True)
     interactable_items.clear()
-    for line in PROJECT.tubings:
-        dpg.draw_line(line.start, line.end, color=(200, 0, 0), thickness=2, parent="drawlist")
+    for idx, line in enumerate(PROJECT.tubings):
+        tag = f"tubing_{idx}"
+        dpg.draw_line(line.start, line.end, color=(200, 0, 0), thickness=2, parent="drawlist", tag=tag)
+        register_interactable(tag, line)
 
     for tee in PROJECT.tees:
         tag = dpg.draw_circle(tee.position, 5, color=(0, 0, 200), fill=(0, 0, 200), parent="drawlist")
@@ -422,6 +601,9 @@ def redraw_canvas():
         _, obj = selected_item
         highlight_selection(obj.position)
 
+    if SELECTED_LINE is not None and dpg.does_item_exist(SELECTED_LINE):
+        highlight_line(SELECTED_LINE)
+
 
 def main():
     dpg.create_context()
@@ -439,6 +621,7 @@ def main():
         dpg.add_button(label="Add Valve", callback=lambda: add_valve())
         dpg.add_button(label="Add Analyzer", callback=lambda: add_analyzer())
         dpg.add_checkbox(label="Piping Mode", callback=toggle_piping_mode, default_value=False)
+        dpg.add_checkbox(label="Snap Geometry", callback=toggle_snap, default_value=True)
         dpg.add_button(label="Delete Selected", callback=lambda: delete_selected_item())
         dpg.add_input_text(label="Save Path", tag="save_path")
         dpg.add_button(label="Save", callback=lambda: save_project())
