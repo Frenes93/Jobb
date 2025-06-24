@@ -18,6 +18,13 @@ from dearpygui import dearpygui as dpg
 # ---------------------------------------------------------------------------
 
 PIPING_MODE = False
+# Snap-to-geometry flag
+SNAP_ENABLED = True
+
+# Line selection helpers
+SELECTED_LINE: int | None = None
+ENDPOINT_MARKERS: list[int] = []
+MIDPOINT_MARKER: int | None = None
 
 # Line selection helpers
 SELECTED_LINE: int | None = None
@@ -30,6 +37,13 @@ def toggle_piping_mode(sender, app_data):
     global PIPING_MODE
     PIPING_MODE = app_data
     print(f"Piping mode {'enabled' if PIPING_MODE else 'disabled'}")
+
+
+def toggle_snap(sender, app_data):
+    """Enable or disable endpoint snapping from UI."""
+    global SNAP_ENABLED
+    SNAP_ENABLED = app_data
+    print(f"Snap {'enabled' if SNAP_ENABLED else 'disabled'}")
 
 # ---------------------------------------------------------------------------
 # Interactivity helpers
@@ -147,8 +161,12 @@ def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) ->
 def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
     """Drag handler for endpoint markers."""
     mouse_pos = dpg.get_mouse_pos(local=False)
-    snap_target = find_nearest_snap_target(mouse_pos)
-    new_pos = snap_target if snap_target else mouse_pos
+    if SNAP_ENABLED:
+        snap_target = find_nearest_snap_target(mouse_pos)
+        new_pos = snap_target if snap_target else mouse_pos
+    else:
+        new_pos = mouse_pos
+
     move_line_endpoint(line_tag, endpoint_idx, new_pos)
     highlight_line(line_tag)
 
@@ -578,6 +596,7 @@ def main():
         dpg.add_button(label="Add Valve", callback=lambda: add_valve())
         dpg.add_button(label="Add Analyzer", callback=lambda: add_analyzer())
         dpg.add_checkbox(label="Piping Mode", callback=toggle_piping_mode, default_value=False)
+        dpg.add_checkbox(label="Snap Geometry", callback=toggle_snap, default_value=True)
         dpg.add_button(label="Delete Selected", callback=lambda: delete_selected_item())
         dpg.add_input_text(label="Save Path", tag="save_path")
         dpg.add_button(label="Save", callback=lambda: save_project())
