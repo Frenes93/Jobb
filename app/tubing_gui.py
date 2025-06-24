@@ -64,6 +64,13 @@ def toggle_snap(sender, app_data):
     SNAP_ENABLED = app_data
     print(f"Snap {'enabled' if SNAP_ENABLED else 'disabled'}")
 
+
+def toggle_snap(sender, app_data):
+    """Enable or disable endpoint snapping from UI."""
+    global SNAP_ENABLED
+    SNAP_ENABLED = app_data
+    print(f"Snap {'enabled' if SNAP_ENABLED else 'disabled'}")
+
 # ---------------------------------------------------------------------------
 # Interactivity helpers
 # ---------------------------------------------------------------------------
@@ -89,7 +96,7 @@ def clear_highlight() -> None:
     """Remove the selection highlight if present."""
 
     global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER, CURRENT_SELECTION
-    
+
     if dpg.does_item_exist("selection_marker"):
         dpg.delete_item("selection_marker")
     if dpg.does_item_exist("highlighted_line"):
@@ -102,6 +109,7 @@ def clear_highlight() -> None:
         dpg.delete_item(MIDPOINT_MARKER)
     MIDPOINT_MARKER = None
     SELECTED_LINE = None
+    
 
     CURRENT_SELECTION = "None"
     highlight_hover_line(None)
@@ -158,11 +166,9 @@ def move_whole_line(line_tag: int, delta: Tuple[float, float]) -> None:
 
 def highlight_line(tag: int) -> None:
     """Highlight a tubing line and show draggable markers."""
-
-    global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER, CURRENT_SELECTION
-    
-    clear_highlight()
-    highlight_hover_line(None)
+global SELECTED_LINE, ENDPOINT_MARKERS, MIDPOINT_MARKER, CURRENT_SELECTION
+clear_highlight()
+highlight_hover_line(None)
     SELECTED_LINE = tag
 
     cfg = dpg.get_item_configuration(tag)
@@ -184,35 +190,18 @@ def highlight_line(tag: int) -> None:
         dpg.set_drag_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
         ENDPOINT_MARKERS.append(drag_tag)
 
-
     midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
     MIDPOINT_MARKER = dpg.draw_rectangle(
         pmin=(midpoint[0] - 5, midpoint[1] - 5),
         pmax=(midpoint[0] + 5, midpoint[1] + 5),
         color=(0, 255, 0),
         fill=(0, 255, 0),
-
-        parent="ui_layer",
-    )
-    dpg.set_drag_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
-    CURRENT_SELECTION = "Line"
-    update_info_label()
-
-
-def highlight_hover_line(tag: int | None) -> None:
-    """Highlight a line under the cursor."""
-    global HOVERED_LINE
-    if HOVERED_LINE == tag:
-        return
-    if dpg.does_item_exist("hover_line"):
-        dpg.delete_item("hover_line")
-    HOVERED_LINE = tag
-    if tag is None:
-        return
-    cfg = dpg.get_item_configuration(tag)
-    p1, p2 = cfg["p1"], cfg["p2"]
-    color = (0, 0, 255) if PIPING_MODE else (255, 255, 0)
-    dpg.draw_line(p1, p2, color=color, thickness=4, parent="ui_layer", tag="hover_line")
+      
+parent="ui_layer",
+)
+dpg.set_drag_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
+CURRENT_SELECTION = "Line"
+update_info_label()
 
 
 
@@ -236,8 +225,7 @@ def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) ->
             best_dist = d
     return nearest
 
-
-
+# Provide visual and snap feedback when dragging an endpoint. Handles color, snap preview, and drag preview rendering.
 def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
     """Drag handler for endpoint markers."""
     mouse_pos = dpg.get_mouse_pos(local=False)
@@ -246,65 +234,51 @@ def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
         snap_target = find_nearest_snap_target(mouse_pos)
         new_pos = snap_target if snap_target else mouse_pos
     else:
+snap_target = find_nearest_snap_target(mouse_pos) if SNAP_ENABLED else None
+new_pos = snap_target if snap_target else mouse_pos
 
-        snap_target = None
-        new_pos = mouse_pos
+move_line_endpoint(line_tag, endpoint_idx, new_pos)
+highlight_line(line_tag)
 
-    move_line_endpoint(line_tag, endpoint_idx, new_pos)
-    highlight_line(line_tag)
+color = (0, 255, 0) if snap_target else (255, 165, 0)
+if ENDPOINT_MARKERS:
+    dpg.configure_item(ENDPOINT_MARKERS[endpoint_idx], color=color, fill=color)
 
-    color = (0, 255, 0) if snap_target else (255, 165, 0)
-    if ENDPOINT_MARKERS:
-        dpg.configure_item(ENDPOINT_MARKERS[endpoint_idx], color=color, fill=color)
+if dpg.does_item_exist("drag_preview"):
+    dpg.delete_item("drag_preview")
+dpg.draw_line(DRAG_START_POS, new_pos, color=(200, 200, 200), thickness=1,
+              parent="ui_layer", tag="drag_preview")
 
-    if dpg.does_item_exist("drag_preview"):
-        dpg.delete_item("drag_preview")
-    dpg.draw_line(DRAG_START_POS, new_pos, color=(200, 200, 200), thickness=1,
-                  parent="ui_layer", tag="drag_preview")
-    if snap_target:
-        if dpg.does_item_exist("snap_effect"):
-            dpg.delete_item("snap_effect")
-        dpg.draw_circle(center=snap_target, radius=8, color=(0, 0, 255),
-                        thickness=2, parent="ui_layer", tag="snap_effect")
-    else:
-        if dpg.does_item_exist("snap_effect"):
-            dpg.delete_item("snap_effect")
-
-
-def on_drag_line(line_tag: int) -> None:
-    """Drag handler for the line midpoint marker."""
-    global DRAG_LINE_ORIGINAL
+if snap_target:
+    if dpg.does_item_exist("snap_effect"):
+        dpg.delete_item("snap_effect")
+    dpg.draw_circle(center=snap_target, radius=8, color=(0, 0, 255),
+                    thickness=2, parent="ui_layer", tag="snap_effect")
+else:
+    if dpg.does_item_exist("snap_effect"):
+        dpg.delete_item("snap_effect")
 
     mouse_pos = dpg.get_mouse_pos(local=False)
     cfg = dpg.get_item_configuration(line_tag)
     p1, p2 = cfg["p1"], cfg["p2"]
     midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+if DRAG_LINE_ORIGINAL is None:
+    DRAG_LINE_ORIGINAL = (p1, p2)
 
-    if DRAG_LINE_ORIGINAL is None:
-        DRAG_LINE_ORIGINAL = (p1, p2)
-    dx, dy = mouse_pos[0] - midpoint[0], mouse_pos[1] - midpoint[1]
-    move_whole_line(line_tag, (dx, dy))
-    highlight_line(line_tag)
-    if MIDPOINT_MARKER is not None:
-        dpg.configure_item(MIDPOINT_MARKER, color=(255, 165, 0), fill=(255, 165, 0))
-    if dpg.does_item_exist("drag_preview"):
-        dpg.delete_item("drag_preview")
-    dpg.draw_line(DRAG_LINE_ORIGINAL[0], DRAG_LINE_ORIGINAL[1],
-                  color=(200, 200, 200), thickness=1,
-                  parent="ui_layer", tag="drag_preview")
+dx, dy = mouse_pos[0] - midpoint[0], mouse_pos[1] - midpoint[1]
+move_whole_line(line_tag, (dx, dy))
+highlight_line(line_tag)
 
+# While dragging a tubing line, show a preview of its original position and update its visual highlight and midpoint feedback.
+if MIDPOINT_MARKER is not None:
+    dpg.configure_item(MIDPOINT_MARKER, color=(255, 165, 0), fill=(255, 165, 0))
 
-def on_mouse_move(sender, app_data):
-    """Highlight tubing when hovering."""
-    if DRAG_START_POS is not None or DRAG_LINE_ORIGINAL is not None:
-        return
-    mouse_pos = dpg.get_mouse_pos(local=False)
-    for tag, obj in interactable_items.items():
-        if isinstance(obj, Tubing):
-            if point_near_segment(mouse_pos, obj.start, obj.end, threshold=6.0):
-                highlight_hover_line(tag)
-                return
-    highlight_hover_line(None)
+if dpg.does_item_exist("drag_preview"):
+    dpg.delete_item("drag_preview")
+
+dpg.draw_line(DRAG_LINE_ORIGINAL[0], DRAG_LINE_ORIGINAL[1],
+              color=(200, 200, 200), thickness=1,
+              parent="ui_layer", tag="drag_preview")
 
 
 
@@ -451,7 +425,7 @@ def on_right_drag(sender, app_data) -> None:
 
 def on_right_release(sender, app_data) -> None:
     """Delete all components inside the selection rectangle."""
-    global rectangle_active, selection_start_pos
+    global rectangle_active, selection_start_pos, selected_item, SELECTED_LINE
     if not rectangle_active or selection_start_pos is None:
         return
     rectangle_active = False
@@ -463,8 +437,15 @@ def on_right_release(sender, app_data) -> None:
 
     to_delete: list[int] = []
     for tag, obj in list(interactable_items.items()):
-        pos = getattr(obj, "position", (0.0, 0.0))
-        if xmin <= pos[0] <= xmax and ymin <= pos[1] <= ymax:
+        inside = False
+        if hasattr(obj, "position"):
+            pos = obj.position
+            inside = xmin <= pos[0] <= xmax and ymin <= pos[1] <= ymax
+        elif isinstance(obj, Tubing):
+            s_in = xmin <= obj.start[0] <= xmax and ymin <= obj.start[1] <= ymax
+            e_in = xmin <= obj.end[0] <= xmax and ymin <= obj.end[1] <= ymax
+            inside = s_in or e_in
+        if inside:
             to_delete.append(tag)
 
     for tag in to_delete:
@@ -475,7 +456,14 @@ def on_right_release(sender, app_data) -> None:
             PROJECT.tees.remove(obj)
         elif isinstance(obj, Analyzer) and obj in PROJECT.analyzers:
             PROJECT.analyzers.remove(obj)
+        elif isinstance(obj, Tubing) and obj in PROJECT.tubings:
+            PROJECT.tubings.remove(obj)
         dpg.delete_item(tag)
+        if SELECTED_LINE == tag:
+            clear_highlight()
+            SELECTED_LINE = None
+        if selected_item and selected_item[0] == tag:
+            selected_item = None
 
     if dpg.does_item_exist(selection_rect_tag):
         dpg.delete_item(selection_rect_tag)
@@ -738,8 +726,8 @@ def redraw_canvas():
     if SELECTED_LINE is not None and dpg.does_item_exist(SELECTED_LINE):
         highlight_line(SELECTED_LINE)
 
+# Ensure info label reflects current interaction state (mode, selection, snapping)
     update_info_label()
-
 
 
 def main():
