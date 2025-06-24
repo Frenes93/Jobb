@@ -6,13 +6,12 @@ from pydantic import ValidationError
 from app.main import frontend, read_root
 from app.routers.pid import handleliste
 from app.schemas.pid import PipingSystem
-from fastapi.responses import FileResponse
 from fastapi import HTTPException
 
 
-def test_frontend_served():
+def test_frontend_returns_message():
     response = asyncio.run(frontend())
-    assert isinstance(response, FileResponse)
+    assert response == {"message": "Welcome to the Jobb API"}
 
 
 def test_api_root_endpoint():
