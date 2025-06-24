@@ -26,10 +26,6 @@ SELECTED_LINE: int | None = None
 ENDPOINT_MARKERS: list[int] = []
 MIDPOINT_MARKER: int | None = None
 
-# Line selection helpers
-SELECTED_LINE: int | None = None
-ENDPOINT_MARKERS: list[int] = []
-MIDPOINT_MARKER: int | None = None
 
 
 def toggle_piping_mode(sender, app_data):
@@ -133,10 +129,15 @@ def highlight_line(tag: int) -> None:
 
     ENDPOINT_MARKERS = []
     for i, point in enumerate([p1, p2]):
-        drag_tag = dpg.draw_circle(center=point, radius=6, color=(0, 255, 255),
-                                   fill=(0, 255, 255), parent="drawlist")
-        dpg.set_item_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
-        ENDPOINT_MARKERS.append(drag_tag)
+        drag_tag = dpg.draw_circle(
+            center=point,
+            radius=6,
+            color=(0, 255, 255),
+            fill=(0, 255, 255),
+            parent="drawlist",
+        )
+        dpg.set_drag_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
+
 
     midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
     MIDPOINT_MARKER = dpg.draw_rectangle(
@@ -146,16 +147,30 @@ def highlight_line(tag: int) -> None:
         fill=(0, 255, 0),
         parent="drawlist",
     )
-    dpg.set_item_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
+    dpg.set_drag_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
+
 
 
 def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) -> Tuple[float, float] | None:
     """Return the position of the nearest snap target within the threshold."""
-    for t, obj in interactable_items.items():
+    candidates: list[Tuple[float, float]] = []
+    for _, obj in interactable_items.items():
         if hasattr(obj, "position"):
-            if math.dist(pos, obj.position) <= threshold:
-                return obj.position
-    return None
+            candidates.append(obj.position)
+    # Include endpoints of existing tubing lines
+    for tube in PROJECT.tubings:
+        candidates.append(tube.start)
+        candidates.append(tube.end)
+
+    nearest: Tuple[float, float] | None = None
+    best_dist = threshold
+    for c in candidates:
+        d = math.dist(pos, c)
+        if d <= best_dist:
+            nearest = c
+            best_dist = d
+    return nearest
+
 
 
 def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
