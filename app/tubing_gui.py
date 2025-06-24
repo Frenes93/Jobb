@@ -24,6 +24,7 @@ interactable_items: dict[int, object] = {}
 """Mapping of draw tags to their backing data objects."""
 
 
+
 def clear_highlight() -> None:
     """Remove the selection highlight if present."""
     if dpg.does_item_exist("selection_marker"):
@@ -95,9 +96,11 @@ def on_mouse_release(sender, app_data):
         finish_line(sender, app_data)
 
 
+
 def delete_selected_item() -> None:
     """Delete the currently selected component from the canvas and project."""
     global selected_item
+
     if not selected_item:
         return
 
@@ -176,6 +179,7 @@ def on_right_release(sender, app_data) -> None:
 
     if dpg.does_item_exist(selection_rect_tag):
         dpg.delete_item(selection_rect_tag)
+
 
 
 class SystemType(Enum):
@@ -400,6 +404,7 @@ def redraw_canvas():
         highlight_selection(obj.position)
 
 
+
 def main():
     dpg.create_context()
     dpg.create_viewport(title="Tubing Designer", width=800, height=600)
@@ -434,6 +439,7 @@ def main():
         dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Right, callback=on_right_click_down)
         dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Right, callback=on_right_drag)
         dpg.add_mouse_release_handler(button=dpg.mvMouseButton_Right, callback=on_right_release)
+
 
 
     dpg.setup_dearpygui()
