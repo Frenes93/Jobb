@@ -27,6 +27,7 @@ def toggle_piping_mode(sender, app_data):
     print(f"Piping mode {'enabled' if PIPING_MODE else 'disabled'}")
 
 # ---------------------------------------------------------------------------
+
 # Interactivity helpers
 # ---------------------------------------------------------------------------
 
@@ -35,6 +36,7 @@ selected_item: tuple[int, object] | None = None
 
 interactable_items: dict[int, object] = {}
 """Mapping of draw tags to their backing data objects."""
+
 
 
 def clear_highlight() -> None:
@@ -72,6 +74,7 @@ def on_mouse_click(sender, app_data):
         start_line(sender, app_data)
         return
 
+
     for tag, obj in interactable_items.items():
         pos = getattr(obj, "position", (0.0, 0.0))
         if math.dist(mouse_pos, pos) <= 10:
@@ -79,8 +82,11 @@ def on_mouse_click(sender, app_data):
             highlight_selection(pos)
             return
 
+
+    # If nothing selected, begin drawing a line and clear highlight
     selected_item = None
     clear_highlight()
+    start_line(sender, app_data)
 
 
 def on_mouse_drag(sender, app_data):
@@ -111,6 +117,7 @@ def on_mouse_release(sender, app_data):
     """Finish drawing if not interacting with an item."""
     if selected_item is None:
         finish_line(sender, app_data)
+
 
 
 def delete_selected_item() -> None:
@@ -194,6 +201,7 @@ def on_right_release(sender, app_data) -> None:
 
     if dpg.does_item_exist(selection_rect_tag):
         dpg.delete_item(selection_rect_tag)
+
 
 
 class SystemType(Enum):
@@ -418,24 +426,22 @@ def redraw_canvas():
         highlight_selection(obj.position)
 
 
+
 def main():
     dpg.create_context()
     dpg.create_viewport(title="Tubing Designer", width=800, height=600)
-
+    
     with dpg.window(label="Controls", width=200, height=600, pos=(0, 0)):
         dpg.add_text("System Type")
         for st in SystemType:
             dpg.add_button(label=st.value, callback=set_system_type, user_data=st)
         dpg.add_separator()
-
         dpg.add_text("Fitting Brand")
         for br in FittingBrand:
             dpg.add_button(label=br.value, callback=set_brand, user_data=br)
         dpg.add_separator()
-
         dpg.add_button(label="Add Valve", callback=lambda: add_valve())
         dpg.add_button(label="Add Analyzer", callback=lambda: add_analyzer())
-        dpg.add_checkbox(label="Piping Mode", callback=toggle_piping_mode, default_value=False)
         dpg.add_button(label="Delete Selected", callback=lambda: delete_selected_item())
         dpg.add_input_text(label="Save Path", tag="save_path")
         dpg.add_button(label="Save", callback=lambda: save_project())
@@ -453,6 +459,7 @@ def main():
         dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Right, callback=on_right_click_down)
         dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Right, callback=on_right_drag)
         dpg.add_mouse_release_handler(button=dpg.mvMouseButton_Right, callback=on_right_release)
+
 
 
     dpg.setup_dearpygui()
