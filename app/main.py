@@ -18,6 +18,12 @@ async def frontend() -> FileResponse:
     return FileResponse(static_dir / "index.html")
 
 
+@app.get("/upload")
+async def upload_portal() -> FileResponse:
+    """Serve the PDF upload portal."""
+    return FileResponse(static_dir / "upload.html")
+
+
 @app.get("/api")
 async def read_root() -> dict[str, str]:
     """Simple welcome endpoint for the API root path."""
