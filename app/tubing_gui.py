@@ -241,8 +241,11 @@ def main():
     with dpg.window(label="Canvas", width=600, height=600, pos=(200, 0)):
         with dpg.drawlist(width=580, height=580, tag="drawlist"):
             pass
+
+    with dpg.handler_registry():
         dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Left, callback=start_line)
         dpg.add_mouse_release_handler(button=dpg.mvMouseButton_Left, callback=finish_line)
+
 
     dpg.setup_dearpygui()
     dpg.show_viewport()
