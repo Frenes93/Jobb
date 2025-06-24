@@ -24,6 +24,7 @@ interactable_items: dict[int, object] = {}
 """Mapping of draw tags to their backing data objects."""
 
 
+
 def clear_highlight() -> None:
     """Remove the selection highlight if present."""
     if dpg.does_item_exist("selection_marker"):
@@ -41,6 +42,7 @@ def highlight_selection(pos: Tuple[float, float]) -> None:
         parent="drawlist",
         tag="selection_marker",
     )
+
 
 
 def register_interactable(tag: int, obj: object) -> None:
@@ -62,6 +64,7 @@ def on_mouse_click(sender, app_data):
     # If nothing selected, begin drawing a line and clear highlight
     selected_item = None
     clear_highlight()
+
     start_line(sender, app_data)
 
 
@@ -95,9 +98,11 @@ def on_mouse_release(sender, app_data):
         finish_line(sender, app_data)
 
 
+
 def delete_selected_item() -> None:
     """Delete the currently selected component from the canvas and project."""
     global selected_item
+
     if not selected_item:
         return
 
@@ -112,6 +117,7 @@ def delete_selected_item() -> None:
     dpg.delete_item(tag)
     interactable_items.pop(tag, None)
     clear_highlight()
+
     selected_item = None
 
 
@@ -335,6 +341,7 @@ def redraw_canvas():
     if selected_item:
         _, obj = selected_item
         highlight_selection(obj.position)
+
 
 
 def main():
