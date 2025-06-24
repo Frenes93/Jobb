@@ -49,3 +49,18 @@ a canvas. When a new line branches off an existing one, the application
 automatically inserts a tee fitting. Projects can be saved to or loaded from
 JSON files.
 
+
+## Agent Tools
+
+The `app.services.agent_tools` module provides two simple utilities:
+
+- **DocumentMonitor**: watches a file for changes and runs an agent after the
+  file has not been edited for 10 seconds. A demo CLI is available:
+  ```bash
+  python -m app.services.document_monitor_cli path/to/file.txt
+  ```
+- **ChatAgent**: allows chatting with a simple agent that responds after the
+  user stops typing for 10 seconds. Start it with:
+  ```bash
+  python -m app.services.chat_cli
+  ```
