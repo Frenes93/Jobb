@@ -27,6 +27,7 @@ ENDPOINT_MARKERS: list[int] = []
 MIDPOINT_MARKER: int | None = None
 
 
+
 def toggle_piping_mode(sender, app_data):
     """Enable or disable piping mode from UI."""
     global PIPING_MODE
@@ -136,7 +137,7 @@ def highlight_line(tag: int) -> None:
             parent="drawlist",
         )
         dpg.set_drag_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
-        ENDPOINT_MARKERS.append(drag_tag)
+
 
     midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
     MIDPOINT_MARKER = dpg.draw_rectangle(
@@ -147,6 +148,7 @@ def highlight_line(tag: int) -> None:
         parent="drawlist",
     )
     dpg.set_drag_callback(MIDPOINT_MARKER, lambda s, a: on_drag_line(tag))
+
 
 
 def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) -> Tuple[float, float] | None:
@@ -170,6 +172,7 @@ def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) ->
     return nearest
 
 
+
 def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
     """Drag handler for endpoint markers."""
     mouse_pos = dpg.get_mouse_pos(local=False)
@@ -178,6 +181,7 @@ def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
         new_pos = snap_target if snap_target else mouse_pos
     else:
         new_pos = mouse_pos
+
     move_line_endpoint(line_tag, endpoint_idx, new_pos)
     highlight_line(line_tag)
 
