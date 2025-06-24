@@ -14,7 +14,9 @@ This repository is for creating a tool to allow process engineers and project en
    uvicorn app.main:app --reload
    ```
 The service will be available at `http://127.0.0.1:8000`.
+
 The root path returns a simple JSON welcome message.
+
 
 ## Configuration
 
