@@ -24,6 +24,27 @@ interactable_items: dict[int, object] = {}
 """Mapping of draw tags to their backing data objects."""
 
 
+
+def clear_highlight() -> None:
+    """Remove the selection highlight if present."""
+    if dpg.does_item_exist("selection_marker"):
+        dpg.delete_item("selection_marker")
+
+
+def highlight_selection(pos: Tuple[float, float]) -> None:
+    """Draw a highlight circle around the given position."""
+    clear_highlight()
+    dpg.draw_circle(
+        center=pos,
+        radius=10,
+        color=(255, 255, 0, 255),
+        thickness=2,
+        parent="drawlist",
+        tag="selection_marker",
+    )
+
+
+
 def register_interactable(tag: int, obj: object) -> None:
     """Register a draw item for interaction."""
     interactable_items[tag] = obj
@@ -37,9 +58,13 @@ def on_mouse_click(sender, app_data):
         pos = getattr(obj, "position", (0.0, 0.0))
         if math.dist(mouse_pos, pos) <= 10:
             selected_item = (tag, obj)
+            highlight_selection(pos)
             return
 
-    # If nothing selected, begin drawing a line
+    # If nothing selected, begin drawing a line and clear highlight
+    selected_item = None
+    clear_highlight()
+
     start_line(sender, app_data)
 
 
@@ -64,17 +89,20 @@ def on_mouse_drag(sender, app_data):
             p3=(new_pos[0] + 5, new_pos[1] + 5),
         )
 
+    highlight_selection(new_pos)
+
 
 def on_mouse_release(sender, app_data):
-    """Finish drawing or clear the selection on mouse release."""
-    global selected_item
+    """Finish drawing if not interacting with an item."""
     if selected_item is None:
         finish_line(sender, app_data)
-    selected_item = None
+
 
 
 def delete_selected_item() -> None:
     """Delete the currently selected component from the canvas and project."""
+    global selected_item
+
     if not selected_item:
         return
 
@@ -88,6 +116,8 @@ def delete_selected_item() -> None:
 
     dpg.delete_item(tag)
     interactable_items.pop(tag, None)
+    clear_highlight()
+
     selected_item = None
 
 
@@ -234,6 +264,9 @@ def load_project():
 
 def start_line(sender, app_data):
     global CURRENT_LINE
+    clear_highlight()
+    global selected_item
+    selected_item = None
     pos = dpg.get_mouse_pos(local=False)
     CURRENT_LINE = [pos[0], pos[1]]
 
@@ -304,6 +337,11 @@ def redraw_canvas():
             parent="drawlist",
         )
         register_interactable(tag, analyzer)
+
+    if selected_item:
+        _, obj = selected_item
+        highlight_selection(obj.position)
+
 
 
 def main():
