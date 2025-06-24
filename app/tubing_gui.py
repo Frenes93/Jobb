@@ -27,7 +27,6 @@ def toggle_piping_mode(sender, app_data):
     print(f"Piping mode {'enabled' if PIPING_MODE else 'disabled'}")
 
 # ---------------------------------------------------------------------------
-
 # Interactivity helpers
 # ---------------------------------------------------------------------------
 
@@ -83,10 +82,9 @@ def on_mouse_click(sender, app_data):
             return
 
 
-    # If nothing selected, begin drawing a line and clear highlight
     selected_item = None
     clear_highlight()
-    start_line(sender, app_data)
+
 
 
 def on_mouse_drag(sender, app_data):
@@ -201,7 +199,6 @@ def on_right_release(sender, app_data) -> None:
 
     if dpg.does_item_exist(selection_rect_tag):
         dpg.delete_item(selection_rect_tag)
-
 
 
 class SystemType(Enum):
@@ -426,7 +423,6 @@ def redraw_canvas():
         highlight_selection(obj.position)
 
 
-
 def main():
     dpg.create_context()
     dpg.create_viewport(title="Tubing Designer", width=800, height=600)
@@ -442,6 +438,7 @@ def main():
         dpg.add_separator()
         dpg.add_button(label="Add Valve", callback=lambda: add_valve())
         dpg.add_button(label="Add Analyzer", callback=lambda: add_analyzer())
+        dpg.add_checkbox(label="Piping Mode", callback=toggle_piping_mode, default_value=False)
         dpg.add_button(label="Delete Selected", callback=lambda: delete_selected_item())
         dpg.add_input_text(label="Save Path", tag="save_path")
         dpg.add_button(label="Save", callback=lambda: save_project())
@@ -459,7 +456,6 @@ def main():
         dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Right, callback=on_right_click_down)
         dpg.add_mouse_drag_handler(button=dpg.mvMouseButton_Right, callback=on_right_drag)
         dpg.add_mouse_release_handler(button=dpg.mvMouseButton_Right, callback=on_right_release)
-
 
 
     dpg.setup_dearpygui()

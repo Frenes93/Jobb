@@ -47,7 +47,8 @@ The GUI lets you choose both a system type and the fitting brand (Parker,
 Butech or Swagelok). You can draw tubing lines and place valves or analyzers on
 a canvas. When a new line branches off an existing one, the application
 automatically inserts a tee fitting. Projects can be saved to or loaded from
-JSON files.
+JSON files. Use the **Piping Mode** checkbox to toggle between drawing new lines
+and selecting existing items.
 
 
 ## Agent Tools
