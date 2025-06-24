@@ -27,6 +27,7 @@ SELECTED_LINE: int | None = None
 ENDPOINT_MARKERS: list[int] = []
 MIDPOINT_MARKER: int | None = None
 
+
 # Hover feedback helpers
 HOVERED_LINE: int | None = None
 
@@ -36,6 +37,7 @@ DRAG_LINE_ORIGINAL: tuple[tuple[float, float], tuple[float, float]] | None = Non
 
 # UI label helper
 CURRENT_SELECTION: str = "None"
+
 
 
 def toggle_piping_mode(sender, app_data):
@@ -162,6 +164,7 @@ def highlight_line(tag: int) -> None:
         dpg.set_drag_callback(drag_tag, lambda s, a, u=i: on_drag_endpoint(tag, u))
         ENDPOINT_MARKERS.append(drag_tag)
 
+
     midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
     MIDPOINT_MARKER = dpg.draw_rectangle(
         pmin=(midpoint[0] - 5, midpoint[1] - 5),
@@ -189,6 +192,7 @@ def highlight_hover_line(tag: int | None) -> None:
     p1, p2 = cfg["p1"], cfg["p2"]
     color = (0, 0, 255) if PIPING_MODE else (255, 255, 0)
     dpg.draw_line(p1, p2, color=color, thickness=4, parent="ui_layer", tag="hover_line")
+
 
 
 def find_nearest_snap_target(pos: Tuple[float, float], threshold: float = 15) -> Tuple[float, float] | None:
