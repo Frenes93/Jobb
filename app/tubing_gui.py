@@ -37,6 +37,7 @@ interactable_items: dict[int, object] = {}
 """Mapping of draw tags to their backing data objects."""
 
 
+
 def clear_highlight() -> None:
     """Remove the selection highlight if present."""
     if dpg.does_item_exist("selection_marker"):
@@ -72,6 +73,7 @@ def on_mouse_click(sender, app_data):
         start_line(sender, app_data)
         return
 
+
     for tag, obj in interactable_items.items():
         pos = getattr(obj, "position", (0.0, 0.0))
         if math.dist(mouse_pos, pos) <= 10:
@@ -79,8 +81,10 @@ def on_mouse_click(sender, app_data):
             highlight_selection(pos)
             return
 
+
     selected_item = None
     clear_highlight()
+
 
 
 def on_mouse_drag(sender, app_data):
@@ -111,6 +115,7 @@ def on_mouse_release(sender, app_data):
     """Finish drawing if not interacting with an item."""
     if selected_item is None:
         finish_line(sender, app_data)
+
 
 
 def delete_selected_item() -> None:
@@ -421,18 +426,16 @@ def redraw_canvas():
 def main():
     dpg.create_context()
     dpg.create_viewport(title="Tubing Designer", width=800, height=600)
-
+    
     with dpg.window(label="Controls", width=200, height=600, pos=(0, 0)):
         dpg.add_text("System Type")
         for st in SystemType:
             dpg.add_button(label=st.value, callback=set_system_type, user_data=st)
         dpg.add_separator()
-
         dpg.add_text("Fitting Brand")
         for br in FittingBrand:
             dpg.add_button(label=br.value, callback=set_brand, user_data=br)
         dpg.add_separator()
-
         dpg.add_button(label="Add Valve", callback=lambda: add_valve())
         dpg.add_button(label="Add Analyzer", callback=lambda: add_analyzer())
         dpg.add_checkbox(label="Piping Mode", callback=toggle_piping_mode, default_value=False)
