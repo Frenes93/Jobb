@@ -14,6 +14,20 @@ import math
 from dearpygui import dearpygui as dpg
 
 # ---------------------------------------------------------------------------
+# Global state
+# ---------------------------------------------------------------------------
+
+PIPING_MODE = False
+
+
+def toggle_piping_mode(sender, app_data):
+    """Enable or disable piping mode from UI."""
+    global PIPING_MODE
+    PIPING_MODE = app_data
+    print(f"Piping mode {'enabled' if PIPING_MODE else 'disabled'}")
+
+# ---------------------------------------------------------------------------
+
 # Interactivity helpers
 # ---------------------------------------------------------------------------
 
@@ -50,15 +64,24 @@ def register_interactable(tag: int, obj: object) -> None:
 
 
 def on_mouse_click(sender, app_data):
-    """Select an item or begin drawing a line."""
+    """Handle left-clicks for selection or starting lines."""
     global selected_item
     mouse_pos = dpg.get_mouse_pos(local=False)
+
+    if PIPING_MODE:
+        selected_item = None
+        clear_highlight()
+        start_line(sender, app_data)
+        return
+
+
     for tag, obj in interactable_items.items():
         pos = getattr(obj, "position", (0.0, 0.0))
         if math.dist(mouse_pos, pos) <= 10:
             selected_item = (tag, obj)
             highlight_selection(pos)
             return
+
 
     # If nothing selected, begin drawing a line and clear highlight
     selected_item = None
@@ -100,7 +123,6 @@ def on_mouse_release(sender, app_data):
 def delete_selected_item() -> None:
     """Delete the currently selected component from the canvas and project."""
     global selected_item
-
     if not selected_item:
         return
 
@@ -408,18 +430,16 @@ def redraw_canvas():
 def main():
     dpg.create_context()
     dpg.create_viewport(title="Tubing Designer", width=800, height=600)
-
+    
     with dpg.window(label="Controls", width=200, height=600, pos=(0, 0)):
         dpg.add_text("System Type")
         for st in SystemType:
             dpg.add_button(label=st.value, callback=set_system_type, user_data=st)
         dpg.add_separator()
-
         dpg.add_text("Fitting Brand")
         for br in FittingBrand:
             dpg.add_button(label=br.value, callback=set_brand, user_data=br)
         dpg.add_separator()
-
         dpg.add_button(label="Add Valve", callback=lambda: add_valve())
         dpg.add_button(label="Add Analyzer", callback=lambda: add_analyzer())
         dpg.add_button(label="Delete Selected", callback=lambda: delete_selected_item())
