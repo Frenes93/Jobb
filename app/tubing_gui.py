@@ -26,6 +26,11 @@ SELECTED_LINE: int | None = None
 ENDPOINT_MARKERS: list[int] = []
 MIDPOINT_MARKER: int | None = None
 
+# Line selection helpers
+SELECTED_LINE: int | None = None
+ENDPOINT_MARKERS: list[int] = []
+MIDPOINT_MARKER: int | None = None
+
 
 def toggle_piping_mode(sender, app_data):
     """Enable or disable piping mode from UI."""
@@ -161,6 +166,7 @@ def on_drag_endpoint(line_tag: int, endpoint_idx: int) -> None:
         new_pos = snap_target if snap_target else mouse_pos
     else:
         new_pos = mouse_pos
+
     move_line_endpoint(line_tag, endpoint_idx, new_pos)
     highlight_line(line_tag)
 
