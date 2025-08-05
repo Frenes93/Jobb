@@ -12,7 +12,12 @@ import math
 import time
 
 
-from dearpygui import dearpygui as dpg
+try:
+    import dearpygui.dearpygui as dpg
+except ImportError as e:
+    raise ImportError(
+        "Dear PyGui is not installed. Please install it using 'pip install dearpygui'."
+    ) from e
 
 # ---------------------------------------------------------------------------
 # Global state
