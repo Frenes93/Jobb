@@ -65,3 +65,38 @@ The `app.services.agent_tools` module provides two simple utilities:
   ```bash
   python -m app.services.chat_cli
   ```
+
+## Standard Update Checker (ISO/NORSOK)
+
+A simple script is available in `app/services/standards_update_checker.py` for checking
+configured ISO and NORSOK standards against chosen source pages.
+
+Run with default in-code list:
+
+```bash
+python -m app.services.standards_update_checker
+```
+
+Run with your own JSON list:
+
+```bash
+python -m app.services.standards_update_checker --targets-file my_standards.json
+```
+
+Example `my_standards.json`:
+
+```json
+[
+  {
+    "code": "ISO 15156",
+    "source": "ISO Online Browsing Platform",
+    "search_url": "https://www.iso.org/search.html?q=ISO%2015156",
+    "note": "Optional note"
+  },
+  {
+    "code": "NORSOK M-650",
+    "source": "Standard Norge NORSOK catalogue",
+    "search_url": "https://online.standard.no/nb/standarder/norsok/"
+  }
+]
+```
