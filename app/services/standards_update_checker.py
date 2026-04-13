@@ -4,10 +4,10 @@ import argparse
 import json
 import re
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Iterable
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+
+import httpx
 
 
 @dataclass(frozen=True)
@@ -56,13 +56,16 @@ class StandardsUpdateChecker:
         self.timeout = timeout
 
     def check_targets(self, targets: Iterable[StandardTarget]) -> list[StandardUpdateResult]:
-        return [self._check_one(target) for target in targets]
+        with httpx.Client(timeout=self.timeout, follow_redirects=True) as client:
+            return [self._check_one(client, target) for target in targets]
 
-    def _check_one(self, target: StandardTarget) -> StandardUpdateResult:
-        checked_at = datetime.now(timezone.utc).isoformat()
+    def _check_one(self, client: httpx.Client, target: StandardTarget) -> StandardUpdateResult:
+        checked_at = datetime.now(UTC).isoformat()
 
         try:
-            status_code, html = _fetch_url(target.search_url, timeout=self.timeout)
+            response = client.get(target.search_url)
+            response.raise_for_status()
+            html = response.text
             found = target.code.lower() in html.lower()
             title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
             page_title = re.sub(r"\s+", " ", title_match.group(1)).strip() if title_match else None
@@ -73,13 +76,13 @@ class StandardsUpdateChecker:
                 source=target.source,
                 search_url=target.search_url,
                 checked_at=checked_at,
-                status_code=status_code,
+                status_code=response.status_code,
                 found=found,
                 page_title=page_title,
                 matched_snippet=snippet,
                 note=target.note,
             )
-        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+        except httpx.HTTPError as exc:
             return StandardUpdateResult(
                 code=target.code,
                 source=target.source,
@@ -91,21 +94,6 @@ class StandardsUpdateChecker:
                 matched_snippet=f"Feil ved henting: {exc}",
                 note=target.note,
             )
-
-
-def _fetch_url(url: str, timeout: float) -> tuple[int, str]:
-    request = Request(
-        url,
-        headers={
-            "User-Agent": "Jobb-standards-checker/1.0 (+https://example.local)",
-        },
-    )
-    with urlopen(request, timeout=timeout) as response:
-        status_code = getattr(response, "status", None) or response.getcode()
-        body = response.read()
-        charset = response.headers.get_content_charset() or "utf-8"
-        html = body.decode(charset, errors="replace")
-    return int(status_code), html
 
 
 def _extract_match_snippet(html: str, query: str, radius: int = 70) -> str | None:

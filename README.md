@@ -74,13 +74,13 @@ configured ISO and NORSOK standards against chosen source pages.
 Run with default in-code list:
 
 ```bash
-python app/services/standards_update_checker.py
+python -m app.services.standards_update_checker
 ```
 
 Run with your own JSON list:
 
 ```bash
-python app/services/standards_update_checker.py --targets-file my_standards.json
+python -m app.services.standards_update_checker --targets-file my_standards.json
 ```
 
 Example `my_standards.json`:
