@@ -74,13 +74,13 @@ configured ISO and NORSOK standards against chosen source pages.
 Run with default in-code list:
 
 ```bash
-python app/services/standards_update_checker.py
+python -m app.services.standards_update_checker
 ```
 
 Run with your own JSON list:
 
 ```bash
-python app/services/standards_update_checker.py --targets-file my_standards.json
+python -m app.services.standards_update_checker --targets-file my_standards.json
 ```
 
 Example `my_standards.json`:
@@ -100,17 +100,3 @@ Example `my_standards.json`:
   }
 ]
 ```
-
-### GUI for standard checks
-
-You can also run a simple desktop GUI for adding/editing standards and running checks:
-
-```bash
-python app/services/standards_update_gui.py
-```
-
-The GUI lets you:
-- add/remove rows with `code`, `source`, `search_url`, `note`
-- load a JSON targets file
-- save your current targets to JSON
-- run the check and view a report directly in the window
